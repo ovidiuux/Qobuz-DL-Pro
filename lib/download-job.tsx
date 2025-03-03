@@ -219,6 +219,7 @@ export const createListenJob = async (
                         cancelled = true;
                         audio.pause();
                         controller.abort();
+                        resolve();
                     }
                 }));
 
