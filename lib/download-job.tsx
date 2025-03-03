@@ -237,6 +237,7 @@ export const createListenJob = async (
                 });
 
                 const trackURL = data.data.url;
+                let playbackFast = false;
                 
                 const audio = new Audio(trackURL);
                 audio.crossOrigin = "anonymous";
@@ -250,8 +251,56 @@ export const createListenJob = async (
                         }));
                     }
                 });
+                window.navigator.mediaSession.metadata = new MediaMetadata({
+                    title: formatTitle(result),
+                    artist: "",
+                    artwork: [{ src: "", type: "image/png" }],
+                });
 
-                audio.addEventListener("ended", ()=> resolve);
+                document.addEventListener("keyup", (e) => {
+                    if (e.code === "Space") {
+                        if (playbackFast) {
+                            audio.playbackRate = 1
+                            playbackFast = false
+                        } else {
+                            audio.paused ? audio.play() : audio.pause()
+                        }
+                    }
+                })
+                document.addEventListener("keydown", (e: any) => {
+                    if (e.code === "Space" && e.target == document.body)
+                    {
+                        e.preventDefault();
+                    }
+                    if (e.ctrlKey)
+                    {
+                        if (e.code === "ArrowDown") null
+                        if (e.code === "ArrowUp") null
+        
+                        if (e.shiftKey)
+                        {
+                                cancelled = true;
+                                audio.pause();
+                                controller.abort();
+                                resolve();
+                        } else 
+                        {
+                            if (e.code === "ArrowLeft") audio.currentTime = audio.currentTime - 5;
+                            if (e.code === "ArrowRight") audio.currentTime = audio.currentTime + 5;
+                        }
+                    }
+                    if (e.repeat)
+                    {
+                        if (e.code === "Space" && !playbackFast)
+                        {
+                            playbackFast = true;
+                            audio.playbackRate = 2;
+                        }                
+                    }
+        
+                })
+
+                audio.addEventListener("ended", ()=> resolve());
             } catch (error) {
                 if (axios.isCancel(error)) {
                     resolve();
