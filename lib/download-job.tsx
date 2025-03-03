@@ -198,9 +198,7 @@ export const createListenJob = async (
     setStatusBar: React.Dispatch<React.SetStateAction<StatusBarProps>>,
     ffmpegState: FFmpegType,
     settings: SettingsProps,
-    toast: (toast: any) => void,
-    fetchedAlbumData?: FetchedQobuzAlbum | null,
-    setFetchedAlbumData?: React.Dispatch<React.SetStateAction<FetchedQobuzAlbum | null>>
+    toast: (toast: any) => void
 ) => {
     if (!('album' in result)) return;
 

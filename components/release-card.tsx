@@ -89,7 +89,7 @@ const ReleaseCard = ({ result, resolvedTheme, ref }: { result: QobuzAlbum | Qobu
                                 size='icon'
                                 variant='ghost'
                                 onClick={async () => {
-                                    await createListenJob(result, setStatusBar, ffmpegState, settings, toast as any, fetchedAlbumData, setFetchedAlbumData);
+                                    await createListenJob(result, setStatusBar, ffmpegState, settings, toast as any);
                                 }}
                             >
                                 <PlayCircle />
