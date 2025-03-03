@@ -217,6 +217,7 @@ export const createListenJob = async (
                     description: "",
                     onCancel: () => {
                         cancelled = true;
+                        audio.src = "";
                         audio.pause();
                         controller.abort();
                         resolve();
@@ -260,13 +261,18 @@ export const createListenJob = async (
                 document.addEventListener("keyup", (e) => {
                     if (e.code === "Space") {
                         if (playbackFast) {
-                            audio.playbackRate = 1
-                            playbackFast = false
+                            audio.playbackRate = 1;
+                            playbackFast = false;
                         } else {
-                            audio.paused ? audio.play() : audio.pause()
+                            if (audio.paused) {
+                                audio.play();
+                            } else {
+                                audio.pause();
+                            }
                         }
                     }
-                })
+                });
+                
                 document.addEventListener("keydown", (e: any) => {
                     if (e.code === "Space" && e.target == document.body)
                     {
@@ -274,13 +280,12 @@ export const createListenJob = async (
                     }
                     if (e.ctrlKey)
                     {
-                        if (e.code === "ArrowDown") null
-                        if (e.code === "ArrowUp") null
         
                         if (e.shiftKey)
                         {
                                 cancelled = true;
                                 audio.pause();
+                                audio.src = "";
                                 controller.abort();
                                 resolve();
                         } else 
