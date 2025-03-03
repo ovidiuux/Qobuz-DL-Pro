@@ -24,7 +24,6 @@ export const formatBytes = (bytes: number): string => {
 export const formatSecounds = (bytes: number): string => {
   if (bytes === 0) return "0";
 
-  const sizes = ["", "KB", "MB", "GB", "TB", "PB"];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
 
   const sizeInUnit = bytes / Math.pow(1024, i);
