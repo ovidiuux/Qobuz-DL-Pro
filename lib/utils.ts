@@ -20,6 +20,23 @@ export const formatBytes = (bytes: number): string => {
   return `${formattedSize} ${sizes[i]}`;
 };
 
+
+export const formatSecounds = (bytes: number): string => {
+  if (bytes === 0) return "0";
+
+  const sizes = ["", "KB", "MB", "GB", "TB", "PB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+
+  const sizeInUnit = bytes / Math.pow(1024, i);
+
+  const formattedSize = new Intl.NumberFormat("en-US", {
+      maximumFractionDigits: i >= 3 ? 2 : 0,
+  }).format(sizeInUnit);
+
+  return `${formattedSize}`;
+};
+
+
 export const cleanFileName = (filename: string) => {
   const bannedChars = ["/", "\\", "?", ":", "*", '"', "<", ">", "|"];
   for (const char in bannedChars) {

@@ -4,10 +4,12 @@ import { FetchedQobuzAlbum, formatArtists, formatTitle, getFullResImage, QobuzAl
 import { createJob } from "./status-bar/jobs";
 import { StatusBarProps } from "@/components/status-bar/status-bar";
 import saveAs from "file-saver";
-import { cleanFileName, formatBytes } from "./utils";
+import { cleanFileName, formatBytes, formatSecounds } from "./utils";
 import { Disc3Icon, DiscAlbumIcon } from "lucide-react";
 import { SettingsProps } from "./settings-provider";
 import { ToastAction } from "@/components/ui/toast";
+
+let audio: any = null;
 
 export const createDownloadJob = async (result: QobuzAlbum | QobuzTrack, setStatusBar: React.Dispatch<React.SetStateAction<StatusBarProps>>, ffmpegState: FFmpegType, settings: SettingsProps, toast: (toast: any) => void, fetchedAlbumData?: FetchedQobuzAlbum | null, setFetchedAlbumData?: React.Dispatch<React.SetStateAction<FetchedQobuzAlbum | null>>) => {
     if ((result as QobuzTrack).album) {
@@ -191,3 +193,80 @@ export const createDownloadJob = async (result: QobuzAlbum | QobuzTrack, setStat
         })
     }
 }
+
+export const createListenJob = async (
+    result: QobuzAlbum | QobuzTrack,
+    setStatusBar: React.Dispatch<React.SetStateAction<StatusBarProps>>,
+    ffmpegState: FFmpegType,
+    settings: SettingsProps,
+    toast: (toast: any) => void,
+    fetchedAlbumData?: FetchedQobuzAlbum | null,
+    setFetchedAlbumData?: React.Dispatch<React.SetStateAction<FetchedQobuzAlbum | null>>
+) => {
+    if (!('album' in result)) return;
+
+    const formattedTitle = `${formatArtists(result)} - ${formatTitle(result)}`;
+    await createJob(setStatusBar, formattedTitle, Disc3Icon, async () => {
+        return new Promise(async (resolve) => {
+            try {
+                const controller = new AbortController();
+                const signal = controller.signal;
+                let cancelled = false;
+
+                setStatusBar(prev => ({
+                    ...prev,
+                    progress: 0,
+                    title: formatTitle(result),
+                    description: "",
+                    onCancel: () => {
+                        cancelled = true;
+                        audio.currentTime = audio.duration;
+                        controller.abort();
+                    }
+                }));
+
+                if (
+                    settings.applyMetadata || 
+                    (settings.outputQuality === "27" && settings.outputCodec === "FLAC") || 
+                    (settings.bitrate === 320 && settings.outputCodec === "MP3")
+                ) {
+                    await loadFFmpeg(ffmpegState, signal);
+                }
+
+                const { data } = await axios.get("/api/download-music", {
+                    params: { track_id: result.id, quality: settings.outputQuality },
+                    signal
+                });
+
+                const trackURL = data.data.url;
+                
+                const audio = new Audio(trackURL);
+                audio.crossOrigin = "anonymous";
+                audio.play();
+
+                audio.addEventListener("timeupdate", () => {
+                    if (!cancelled) {
+                        setStatusBar(statusBar => ({
+                            ...statusBar,
+                            progress: Math.floor((audio.currentTime / audio.duration) * 100),
+                        }));
+                    }
+                });
+
+                audio.addEventListener("ended", resolve);
+            } catch (error) {
+                if (axios.isCancel(error)) {
+                    resolve();
+                    return;
+                }
+                
+                toast({
+                    title: "Error",
+                    description: error instanceof Error ? error.message : "An unknown error occurred",
+                    action: <ToastAction altText="Copy Stack" onClick={() => navigator.clipboard.writeText(error.stack || "")}>Copy Stack</ToastAction>,
+                });
+                resolve();
+            }
+        });
+    });
+};

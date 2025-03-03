@@ -1,6 +1,6 @@
 import { formatArtists, formatTitle, getAlbum, formatDuration, QobuzAlbum, QobuzTrack, FetchedQobuzAlbum, getFullAlbumInfo } from '@/lib/qobuz-dl'
 import { cn } from '@/lib/utils'
-import { AlignJustifyIcon, DotIcon, DownloadIcon } from 'lucide-react'
+import { AlignJustifyIcon, DotIcon, DownloadIcon, PlaneIcon, PlayCircle, PlayIcon } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { Button } from './ui/button'
 import { useStatusBar } from '@/lib/status-bar/context'
@@ -15,7 +15,7 @@ import {
 import { Separator } from './ui/separator'
 import { ScrollArea } from './ui/scroll-area'
 import { motion } from 'motion/react'
-import { createDownloadJob } from '@/lib/download-job'
+import { createDownloadJob, createListenJob } from '@/lib/download-job'
 import { useSettings } from '@/lib/settings-provider'
 import { Skeleton } from './ui/skeleton'
 import Image from 'next/image'
@@ -76,7 +76,7 @@ const ReleaseCard = ({ result, resolvedTheme, ref }: { result: QobuzAlbum | Qobu
                             </div>
                         </div>
                         <div className="flex items-center justify-between gap-4 p-2">
-                            {(result as QobuzTrack).album ? <Button
+                            {(result as QobuzTrack).album ? (<><Button
                                 size='icon'
                                 variant='ghost'
                                 onClick={async () => {
@@ -84,7 +84,18 @@ const ReleaseCard = ({ result, resolvedTheme, ref }: { result: QobuzAlbum | Qobu
                                 }}
                             >
                                 <DownloadIcon />
-                            </Button> : <DownloadAlbumButton variant='ghost' size='icon' result={result as QobuzAlbum} toast={toast} setStatusBar={setStatusBar} ffmpegState={ffmpegState} settings={settings} fetchedAlbumData={fetchedAlbumData} setFetchedAlbumData={setFetchedAlbumData} onOpen={() => setFocusCard(true)} onClose={() => setFocusCard(false)}/>}
+                            </Button>
+                            <Button
+                                size='icon'
+                                variant='ghost'
+                                onClick={async () => {
+                                    await createListenJob(result, setStatusBar, ffmpegState, settings, toast as any, fetchedAlbumData, setFetchedAlbumData);
+                                }}
+                            >
+                                <PlayCircle />
+                            </Button>
+                             </>)
+                            : <DownloadAlbumButton variant='ghost' size='icon' result={result as QobuzAlbum} toast={toast} setStatusBar={setStatusBar} ffmpegState={ffmpegState} settings={settings} fetchedAlbumData={fetchedAlbumData} setFetchedAlbumData={setFetchedAlbumData} onOpen={() => setFocusCard(true)} onClose={() => setFocusCard(false)}/>}
                             {(result as QobuzTrack).album ? null :
                                 <Button size='icon' variant='ghost' onClick={async () => {
                                     setOpenTracklist(!openTracklist);
@@ -94,6 +105,7 @@ const ReleaseCard = ({ result, resolvedTheme, ref }: { result: QobuzAlbum | Qobu
                                 </Button>
                             }
                         </div>
+
                     </div>
                 </div>
                 {loadedImage && <motion.div

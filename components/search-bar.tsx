@@ -87,7 +87,7 @@ const SearchBar = ({ onSearch, searching, setSearching, query }: { onSearch: (qu
                     id="search"
                     className="focus-visible:outline-none focus-visible:ring-transparent select-none shadow-none outline-none border-none"
                     ref={inputRef}
-                    placeholder="Search for anything..."
+                    placeholder="Caută..."
                     value={searchInput}
                     autoComplete="off"
                     onFocus={(event: React.FocusEvent<HTMLInputElement>) => {
