@@ -4,12 +4,11 @@ import { FetchedQobuzAlbum, formatArtists, formatTitle, getFullResImage, QobuzAl
 import { createJob } from "./status-bar/jobs";
 import { StatusBarProps } from "@/components/status-bar/status-bar";
 import saveAs from "file-saver";
-import { cleanFileName, formatBytes, formatSecounds } from "./utils";
+import { cleanFileName, formatBytes } from "./utils";
 import { Disc3Icon, DiscAlbumIcon } from "lucide-react";
 import { SettingsProps } from "./settings-provider";
 import { ToastAction } from "@/components/ui/toast";
 
-let audio: any = null;
 
 export const createDownloadJob = async (result: QobuzAlbum | QobuzTrack, setStatusBar: React.Dispatch<React.SetStateAction<StatusBarProps>>, ffmpegState: FFmpegType, settings: SettingsProps, toast: (toast: any) => void, fetchedAlbumData?: FetchedQobuzAlbum | null, setFetchedAlbumData?: React.Dispatch<React.SetStateAction<FetchedQobuzAlbum | null>>) => {
     if ((result as QobuzTrack).album) {
@@ -253,7 +252,7 @@ export const createListenJob = async (
                     }
                 });
 
-                audio.addEventListener("ended", resolve);
+                audio.addEventListener("ended", ()=> resolve);
             } catch (error) {
                 if (axios.isCancel(error)) {
                     resolve();
@@ -263,7 +262,7 @@ export const createListenJob = async (
                 toast({
                     title: "Error",
                     description: error instanceof Error ? error.message : "An unknown error occurred",
-                    action: <ToastAction altText="Copy Stack" onClick={() => navigator.clipboard.writeText(error.stack || "")}>Copy Stack</ToastAction>,
+                    action: <ToastAction altText="Copy Stack" onClick={() => navigator.clipboard.writeText("")}>Copy Stack</ToastAction>,
                 });
                 resolve();
             }

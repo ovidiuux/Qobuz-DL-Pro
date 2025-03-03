@@ -1,6 +1,6 @@
 import { formatArtists, formatTitle, getAlbum, formatDuration, QobuzAlbum, QobuzTrack, FetchedQobuzAlbum, getFullAlbumInfo } from '@/lib/qobuz-dl'
 import { cn } from '@/lib/utils'
-import { AlignJustifyIcon, DotIcon, DownloadIcon, PlaneIcon, PlayCircle, PlayIcon } from 'lucide-react'
+import { AlignJustifyIcon, DotIcon, DownloadIcon, PlayCircle } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { Button } from './ui/button'
 import { useStatusBar } from '@/lib/status-bar/context'
