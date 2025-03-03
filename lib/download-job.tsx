@@ -217,7 +217,7 @@ export const createListenJob = async (
                     description: "",
                     onCancel: () => {
                         cancelled = true;
-                        audio.currentTime = audio.duration;
+                        audio.pause();
                         controller.abort();
                     }
                 }));
