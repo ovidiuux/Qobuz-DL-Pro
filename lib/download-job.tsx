@@ -224,13 +224,7 @@ export const createListenJob = async (
                     }
                 }));
 
-                if (
-                    settings.applyMetadata || 
-                    (settings.outputQuality === "27" && settings.outputCodec === "FLAC") || 
-                    (settings.bitrate === 320 && settings.outputCodec === "MP3")
-                ) {
-                    await loadFFmpeg(ffmpegState, signal);
-                }
+        
 
                 const { data } = await axios.get("/api/download-music", {
                     params: { track_id: result.id, quality: settings.outputQuality },
