@@ -10,6 +10,7 @@ import SettingsForm from "@/components/ui/settings-form";
 import { SettingsProvider } from "@/lib/settings-provider";
 import { BackgroundProvider } from "@/lib/background-provider";
 import { Toaster } from "@/components/ui/toaster"
+import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({
     subsets: ['latin'],
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={`${inter.className} antialiased`}>
+                <Analytics></Analytics>
                 <FFmpegProvider>
                     <StatusBarProvider>
                         <SettingsProvider>
