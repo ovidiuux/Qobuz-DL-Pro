@@ -336,20 +336,22 @@ export const createListenJob = async (
                 });
 
                 document.addEventListener("keyup", (e) => {
-                    const tag = e.target?.tagName;
-                    const editable = e.target?.isContentEditable;
-
-                    if (tag === "INPUT" || tag === "TEXTAREA" || editable) return;
-
-                    if (e.code === "Space") {
-                        if (playbackFast) {
-                            audio.playbackRate = 1;
-                            playbackFast = false;
-                        } else {
-                            audio[audio.paused ? "play" : "pause"]();
-                        }
-                    }
-                });
+    if (!(e.target instanceof HTMLElement)) return;
+    
+    const tag = e.target.tagName;
+    const editable = e.target.isContentEditable;
+    
+    if (tag === "INPUT" || tag === "TEXTAREA" || editable) return;
+    
+    if (e.code === "Space") {
+        if (playbackFast) {
+            audio.playbackRate = 1;
+            playbackFast = false;
+        } else {
+            audio[audio.paused ? "play" : "pause"]();
+        }
+    }
+});
 
 
 
