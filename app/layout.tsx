@@ -9,6 +9,7 @@ import { StatusBarProvider } from '@/lib/status-bar/context';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { CountryProvider } from '@/lib/country-provider';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
 const inter = Inter({
@@ -74,6 +75,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                         <script src='https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js'></script>
                     </CountryProvider>
                 </FFmpegProvider>
+                <Analytics />
             </body>
         </html>
     );
