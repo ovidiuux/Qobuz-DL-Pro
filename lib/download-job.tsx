@@ -280,11 +280,9 @@ export const createListenJob = async (
     ffmpegState: FFmpegType,
     settings: SettingsProps,
     toast: (toast: any) => void,
-    fetchedAlbumData?: FetchedQobuzAlbum | null,
-    setFetchedAlbumData?: React.Dispatch<React.SetStateAction<FetchedQobuzAlbum | null>>,
-    country?: string
 ) => {
     if (!('album' in result)) return;
+
 
     const formattedTitle = formatTitle(result);
     await createJob(setStatusBar, formattedTitle, Disc3Icon, async () => {

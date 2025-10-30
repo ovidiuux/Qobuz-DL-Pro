@@ -149,8 +149,15 @@ const ReleaseCard = ({
                                             size='icon'
                                             variant='ghost'
                                             onClick={async () => {
-                                                await createListenJob(result, setStatusBar, ffmpegState, settings, toast as any);
+                                                await createListenJob(
+                                                                        result as QobuzTrack,
+                                                                        setStatusBar,
+                                                                        ffmpegState,
+                                                                        settings,
+                                                                        toast as any,
+                                                                       );
                                             }}
+                                            
                                         >
                                             <PlayCircle />
                                         </Button>
@@ -380,10 +387,7 @@ const ReleaseCard = ({
                                                                         ffmpegState,
                                                                         settings,
                                                                         toast as any,
-                                                                        undefined,
-                                                                        undefined,
-                                                                        country
-                                                                    );
+                                                                       );
                                                                 }}
                                                             >
                                                                 <PlayIcon />

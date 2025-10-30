@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Button, ButtonProps } from './ui/button';
-import { DownloadIcon, FileArchiveIcon, MusicIcon, PlayCircle } from 'lucide-react';
+import { DownloadIcon, FileArchiveIcon, MusicIcon } from 'lucide-react';
 import { StatusBarProps } from './status-bar/status-bar';
 import { FFmpegType } from '@/lib/ffmpeg-functions';
 import { SettingsProps } from '@/lib/settings-provider';
 import { FetchedQobuzAlbum, formatTitle, getFullAlbumInfo, QobuzAlbum } from '@/lib/qobuz-dl';
-import { createDownloadJob, createListenJob } from '@/lib/download-job';
+import { createDownloadJob } from '@/lib/download-job';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { useCountry } from '@/lib/country-provider';
 
