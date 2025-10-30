@@ -273,6 +273,11 @@ export const createDownloadJob = async (
 };
 
 
+interface AudioState {
+    volume: number
+    playbackRate: number
+    isMuted: boolean
+}
 
 export const createListenJob = async (
     result: QobuzAlbum | QobuzTrack,
@@ -281,128 +286,245 @@ export const createListenJob = async (
     settings: SettingsProps,
     toast: (toast: any) => void,
 ) => {
-    if (!('album' in result)) return;
+    if (!("album" in result)) return
 
-    const formattedTitle = result.title;
-    const artistName = result.performer.name;
+    const formattedTitle = result.title
+    const artistName = result.performer.name
 
     await createJob(setStatusBar, formattedTitle, Disc3Icon, async () => {
         return new Promise(async (resolve) => {
-            try {
-                const controller = new AbortController();
-                const signal = controller.signal;
-                let cancelled = false;
+            let audio: HTMLAudioElement | null = null
+            let keyupHandler: ((e: KeyboardEvent) => void) | null = null
+            let keydownHandler: ((e: KeyboardEvent) => void) | null = null
+            let timeUpdateHandler: (() => void) | null = null
+            let endedHandler: (() => void) | null = null
 
-                setStatusBar(prev => ({
+            const audioState: AudioState = {
+                volume: 1,
+                playbackRate: 1,
+                isMuted: false,
+            }
+
+            const cleanup = () => {
+                if (audio) {
+                    audio.pause()
+                    audio.src = ""
+                    if (timeUpdateHandler) audio.removeEventListener("timeupdate", timeUpdateHandler)
+                    if (endedHandler) audio.removeEventListener("ended", endedHandler)
+                    audio = null
+                }
+                if (keyupHandler) {
+                    document.removeEventListener("keyup", keyupHandler)
+                    keyupHandler = null
+                }
+                if (keydownHandler) {
+                    document.removeEventListener("keydown", keydownHandler)
+                    keydownHandler = null
+                }
+                if ("mediaSession" in navigator) {
+                    navigator.mediaSession.metadata = null
+                }
+            }
+
+            try {
+                const controller = new AbortController()
+                const signal = controller.signal
+                let cancelled = false
+
+                setStatusBar((prev) => ({
                     ...prev,
                     progress: 0,
                     title: formattedTitle,
                     description: artistName,
                     onCancel: () => {
-                        cancelled = true;
-                        audio.src = "";
-                        audio.pause();
-                        controller.abort();
-                        resolve();
-                    }
-                }));
-
+                        cancelled = true
+                        cleanup()
+                        controller.abort()
+                        resolve()
+                    },
+                }))
 
                 const { data } = await axios.get("/api/download-music", {
                     params: { track_id: result.id, quality: settings.outputQuality },
-                    signal
-                });
+                    signal,
+                })
 
-                const trackURL = data.data.url;
-                let playbackFast = false;
+                const trackURL = data.data.url
+                let playbackFast = false
 
-                const audio = new Audio(trackURL);
-                audio.crossOrigin = "anonymous";
-                audio.play();
+                audio = new Audio(trackURL)
+                audio.crossOrigin = "anonymous"
+                audio.preload = "auto"
+                audio.play()
 
-                audio.addEventListener("timeupdate", () => {
-                    if (!cancelled) {
-                        setStatusBar(statusBar => ({
+                const audioRef = audio
+
+                timeUpdateHandler = () => {
+                    if (!cancelled && audioRef) {
+                        setStatusBar((statusBar) => ({
                             ...statusBar,
-                            progress: Math.floor((audio.currentTime / audio.duration) * 100),
-                        }));
+                            progress: Math.floor((audioRef.currentTime / audioRef.duration) * 100),
+                        }))
                     }
-                });
+                }
+
+
+                audioRef.addEventListener("timeupdate", timeUpdateHandler)
 
                 window.navigator.mediaSession.metadata = new MediaMetadata({
                     title: formatTitle(result),
                     artist: artistName,
                     artwork: [{ src: "https://corsproxy.io/?url=" + result.album.image.large, type: "image/png" }],
-                });
+                })
 
-                document.addEventListener("keyup", (e) => {
-                    if (!(e.target instanceof HTMLElement)) return;
+                if ("mediaSession" in navigator) {
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: formatTitle(result),
+                        artist: artistName,
+                        artwork: [{ src: "https://corsproxy.io/?url=" + result.album.image.large, type: "image/png" }],
+                    })
 
-                    const tag = e.target.tagName;
-                    const editable = e.target.isContentEditable;
+                    navigator.mediaSession.setActionHandler("play", () => {
+                        audioRef.play()
+                    })
 
-                    if (tag === "INPUT" || tag === "TEXTAREA" || editable) return;
+                    navigator.mediaSession.setActionHandler("pause", () => {
+                        audioRef.pause()
+                    })
+
+                    navigator.mediaSession.setActionHandler("seekbackward", () => {
+                        audioRef.currentTime = Math.max(0, audioRef.currentTime - 10)
+                    })
+
+                    navigator.mediaSession.setActionHandler("seekforward", () => {
+                        audioRef.currentTime = Math.min(audioRef.duration, audioRef.currentTime + 10)
+                    })
+
+                    navigator.mediaSession.setActionHandler("seekto", (details) => {
+                        if (details.seekTime) {
+                            audioRef.currentTime = details.seekTime
+                        }
+                    })
+                }
+
+                keyupHandler = (e: KeyboardEvent) => {
+                    if (!audioRef) return
+                    if (!(e.target instanceof HTMLElement)) return
+
+                    const tag = e.target.tagName
+                    const editable = e.target.isContentEditable
+
+                    if (tag === "INPUT" || tag === "TEXTAREA" || editable) return
 
                     if (e.code === "Space") {
                         if (playbackFast) {
-                            audio.playbackRate = 1;
-                            playbackFast = false;
+                            audioRef.playbackRate = 1
+                            audioState.playbackRate = 1
+                            playbackFast = false
                         } else {
-                            audio[audio.paused ? "play" : "pause"]();
+                            audioRef[audioRef.paused ? "play" : "pause"]()
                         }
                     }
-                });
 
-
-                document.addEventListener("keydown", (e: any) => {
-                    if (!(e.target instanceof HTMLElement)) return;
-
-                    const tag = e.target.tagName;
-                    const editable = e.target.isContentEditable;
-
-                    if (tag === "INPUT" || tag === "TEXTAREA" || editable) return;
-
-                    if (e.code === "Space" && e.target == document.body) {
-                        e.preventDefault();
+                    if (e.code === "KeyM") {
+                        audioState.isMuted = !audioState.isMuted
+                        audioRef.volume = audioState.isMuted ? 0 : audioState.volume
                     }
+                }
+                document.addEventListener("keyup", keyupHandler)
+
+                keydownHandler = (e: KeyboardEvent) => {
+                    if (!audioRef) return
+                    if (!(e.target instanceof HTMLElement)) return
+
+                    const tag = e.target.tagName
+                    const editable = e.target.isContentEditable
+
+                    if (tag === "INPUT" || tag === "TEXTAREA" || editable) return
+
+
+
                     if (e.ctrlKey) {
                         if (e.shiftKey) {
-                            cancelled = true;
-                            audio.pause();
-                            audio.src = "";
-                            controller.abort();
-                            resolve();
-                        } else {
-                            if (e.code === "ArrowLeft") audio.currentTime = audio.currentTime - 5;
-                            if (e.code === "ArrowRight") audio.currentTime = audio.currentTime + 5;
+                            cancelled = true
+                            cleanup()
+                            controller.abort()
+                            resolve()
+                            return;
+                        }
+                        if (e.code === "ArrowLeft") audioRef.currentTime = audioRef.currentTime - 5
+                        if (e.code === "ArrowRight") audioRef.currentTime = audioRef.currentTime + 5
+                        if (e.code === "ArrowUp") {
+                            e.preventDefault()
+                            audioState.volume = Math.min(1, audioState.volume + 0.1)
+                            if (!audioState.isMuted) {
+                                audioRef.volume = audioState.volume
+                            }
+                        }
+                        if (e.code === "ArrowDown") {
+                            e.preventDefault()
+                            audioState.volume = Math.max(0, audioState.volume - 0.1)
+                            if (!audioState.isMuted) {
+                                audioRef.volume = audioState.volume
+                            }
                         }
                     }
+
+                    if (e.shiftKey && !e.ctrlKey) {
+                        const speedMap: Record<string, number> = {
+                            Digit1: 0.5,
+                            Digit2: 0.75,
+                            Digit3: 1,
+                            Digit4: 1.25,
+                            Digit5: 1.5,
+                            Digit6: 2,
+                        }
+                        if (speedMap[e.code]) {
+                            e.preventDefault()
+                            audioState.playbackRate = speedMap[e.code]
+                            audioRef.playbackRate = audioState.playbackRate
+                        }
+                    }
+
                     if (e.repeat) {
                         if (e.code === "Space" && !playbackFast) {
-                            playbackFast = true;
-                            audio.playbackRate = 2;
+                            playbackFast = true
+                            audioRef.playbackRate = 2
+                            audioState.playbackRate = 2
                         }
                     }
+                }
+                document.addEventListener("keydown", keydownHandler)
 
-                })
-
-                audio.addEventListener("ended", () => resolve());
+                endedHandler = () => {
+                    cleanup()
+                    resolve()
+                }
+                audioRef.addEventListener("ended", endedHandler)
             } catch (error) {
+                cleanup()
+
                 if (axios.isCancel(error)) {
-                    resolve();
-                    return;
+                    resolve()
+                    return
                 }
 
                 toast({
                     title: "Error",
                     description: error instanceof Error ? error.message : "An unknown error occurred",
-                    action: <ToastAction altText="Copy Stack" onClick={() => navigator.clipboard.writeText("")}>Copy Stack</ToastAction>,
-                });
-                resolve();
+                    action: (
+                        <ToastAction altText="Copy Stack" onClick={() => navigator.clipboard.writeText("")}>
+                            Copy Stack
+                        </ToastAction>
+                    ),
+                })
+                resolve()
             }
-        });
-    });
-};
+        })
+    })
+}
+
+
 
 function proceedDownload(objectURL: string, title: string) {
     saveAs(objectURL, title);
