@@ -283,8 +283,9 @@ export const createListenJob = async (
 ) => {
     if (!('album' in result)) return;
 
+    const formattedTitle = result.title;
+    const artistName = result.performer.name;
 
-    const formattedTitle = formatTitle(result);
     await createJob(setStatusBar, formattedTitle, Disc3Icon, async () => {
         return new Promise(async (resolve) => {
             try {
@@ -295,8 +296,8 @@ export const createListenJob = async (
                 setStatusBar(prev => ({
                     ...prev,
                     progress: 0,
-                    title: formatTitle(result),
-                    description: "",
+                    title: formattedTitle,
+                    description: artistName,
                     onCancel: () => {
                         cancelled = true;
                         audio.src = "";
@@ -306,7 +307,6 @@ export const createListenJob = async (
                     }
                 }));
 
-        
 
                 const { data } = await axios.get("/api/download-music", {
                     params: { track_id: result.id, quality: settings.outputQuality },
@@ -315,7 +315,7 @@ export const createListenJob = async (
 
                 const trackURL = data.data.url;
                 let playbackFast = false;
-                
+
                 const audio = new Audio(trackURL);
                 audio.crossOrigin = "anonymous";
                 audio.play();
@@ -328,66 +328,64 @@ export const createListenJob = async (
                         }));
                     }
                 });
+
                 window.navigator.mediaSession.metadata = new MediaMetadata({
                     title: formatTitle(result),
-                    artist: "",
-                    artwork: [{ src: "", type: "image/png" }],
+                    artist: artistName,
+                    artwork: [{ src: "https://corsproxy.io/?url=" + result.album.image.large, type: "image/png" }],
                 });
 
                 document.addEventListener("keyup", (e) => {
+                    const tag = e.target?.tagName;
+                    const editable = e.target?.isContentEditable;
+
+                    if (tag === "INPUT" || tag === "TEXTAREA" || editable) return;
+
                     if (e.code === "Space") {
                         if (playbackFast) {
                             audio.playbackRate = 1;
                             playbackFast = false;
                         } else {
-                            if (audio.paused) {
-                                audio.play();
-                            } else {
-                                audio.pause();
-                            }
+                            audio[audio.paused ? "play" : "pause"]();
                         }
                     }
                 });
-                
+
+
+
                 document.addEventListener("keydown", (e: any) => {
-                    if (e.code === "Space" && e.target == document.body)
-                    {
+                    if (e.code === "Space" && e.target == document.body) {
                         e.preventDefault();
                     }
-                    if (e.ctrlKey)
-                    {
-        
-                        if (e.shiftKey)
-                        {
-                                cancelled = true;
-                                audio.pause();
-                                audio.src = "";
-                                controller.abort();
-                                resolve();
-                        } else 
-                        {
+                    if (e.ctrlKey) {
+
+                        if (e.shiftKey) {
+                            cancelled = true;
+                            audio.pause();
+                            audio.src = "";
+                            controller.abort();
+                            resolve();
+                        } else {
                             if (e.code === "ArrowLeft") audio.currentTime = audio.currentTime - 5;
                             if (e.code === "ArrowRight") audio.currentTime = audio.currentTime + 5;
                         }
                     }
-                    if (e.repeat)
-                    {
-                        if (e.code === "Space" && !playbackFast)
-                        {
+                    if (e.repeat) {
+                        if (e.code === "Space" && !playbackFast) {
                             playbackFast = true;
                             audio.playbackRate = 2;
-                        }                
+                        }
                     }
-        
+
                 })
 
-                audio.addEventListener("ended", ()=> resolve());
+                audio.addEventListener("ended", () => resolve());
             } catch (error) {
                 if (axios.isCancel(error)) {
                     resolve();
                     return;
                 }
-                
+
                 toast({
                     title: "Error",
                     description: error instanceof Error ? error.message : "An unknown error occurred",
