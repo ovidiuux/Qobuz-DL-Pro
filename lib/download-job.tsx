@@ -286,6 +286,7 @@ export const createListenJob = async (
     settings: SettingsProps,
     toast: (toast: any) => void,
 ) => {
+
     if (!("album" in result)) return
 
     const formattedTitle = result.title
@@ -368,14 +369,7 @@ export const createListenJob = async (
                     }
                 }
 
-
                 audioRef.addEventListener("timeupdate", timeUpdateHandler)
-
-                window.navigator.mediaSession.metadata = new MediaMetadata({
-                    title: formatTitle(result),
-                    artist: artistName,
-                    artwork: [{ src: "https://corsproxy.io/?url=" + result.album.image.large, type: "image/png" }],
-                })
 
                 if ("mediaSession" in navigator) {
                     navigator.mediaSession.metadata = new MediaMetadata({
@@ -416,6 +410,8 @@ export const createListenJob = async (
 
                     if (tag === "INPUT" || tag === "TEXTAREA" || editable) return
 
+                    e.preventDefault();
+
                     if (e.code === "Space") {
                         if (playbackFast) {
                             audioRef.playbackRate = 1
@@ -442,7 +438,7 @@ export const createListenJob = async (
 
                     if (tag === "INPUT" || tag === "TEXTAREA" || editable) return
 
-
+                    e.preventDefault();
 
                     if (e.ctrlKey) {
                         if (e.shiftKey) {
@@ -455,14 +451,12 @@ export const createListenJob = async (
                         if (e.code === "ArrowLeft") audioRef.currentTime = audioRef.currentTime - 5
                         if (e.code === "ArrowRight") audioRef.currentTime = audioRef.currentTime + 5
                         if (e.code === "ArrowUp") {
-                            e.preventDefault()
                             audioState.volume = Math.min(1, audioState.volume + 0.1)
                             if (!audioState.isMuted) {
                                 audioRef.volume = audioState.volume
                             }
                         }
                         if (e.code === "ArrowDown") {
-                            e.preventDefault()
                             audioState.volume = Math.max(0, audioState.volume - 0.1)
                             if (!audioState.isMuted) {
                                 audioRef.volume = audioState.volume
@@ -480,7 +474,6 @@ export const createListenJob = async (
                             Digit6: 2,
                         }
                         if (speedMap[e.code]) {
-                            e.preventDefault()
                             audioState.playbackRate = speedMap[e.code]
                             audioRef.playbackRate = audioState.playbackRate
                         }
@@ -500,6 +493,7 @@ export const createListenJob = async (
                     cleanup()
                     resolve()
                 }
+
                 audioRef.addEventListener("ended", endedHandler)
             } catch (error) {
                 cleanup()
